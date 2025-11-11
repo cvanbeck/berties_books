@@ -1,5 +1,6 @@
 // Import express and ejs
 var express = require ('express')
+const mysql = require('mysql2');
 var ejs = require('ejs')
 const path = require('path')
 
@@ -18,6 +19,20 @@ app.use(express.static(path.join(__dirname, 'public')))
 
 // Define our application-specific data
 app.locals.shopData = {shopName: "Bertie's Books"}
+
+// Define database
+const db = mysql.createPool({
+    host: "localhost",
+    user: "berties_books_app",
+    password: "qwertyuiop",
+    database: "berties_books",
+    waitForConnections: true,
+    connectionLimit: 10,
+    queueLimit: 10
+});
+
+global.db = db
+
 
 // Load the route handlers
 const mainRoutes = require("./routes/main")
