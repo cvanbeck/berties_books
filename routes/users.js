@@ -33,7 +33,17 @@ router.post('/registered', function (req, res, next) {
             });
         }
     });
-}); 
+});
+
+router.get("/list", (req, res, next) => {
+    let sqlquery = "SELECT username, firstName, lastName, email FROM userdata"
+    db.query(sqlquery, (err, result) => {
+        if(err) {
+            next(err)
+        }
+        res.render("listUsers.ejs", {users:result})
+    });
+})
 
 // Export the router object so index.js can access it
 module.exports = router
