@@ -23,7 +23,7 @@ CREATE TABLE IF NOT EXISTS userdata (
 
 CREATE TABLE IF NOT EXISTS login_attempts(
     id          INT AUTO_INCREMENT,
-    username    VARCHAR(50),
+    userId      INT,
     outcome     VARCHAR(50),
     time        datetime,
     PRIMARY KEY(ID)

@@ -18,6 +18,8 @@ as a enviroment variable. When the DB runs it grabs this variable and uses it to
 In order for it to work on the linux machine I ran the command `echo "PASSWORD=db_password" >> .env` to create the file
 
 ## Audit
-This webapp also logs all login attempts made to a valid username, this is done by by creating a new table called login_attempts, when a login attempt a new entry is added included username, current time, and if the request was succesful or not.
+This webapp also logs all login attempts made to a valid username, this is done by by creating a new table called login_attempts, when a login attempt is made it uses the username inputed to find the matching userId in userdata table. This is then stored alongside current time and if they managed to log in succesfully.
 
-I didn't want this logging to hold up any other parts of the web app, therefore these requests are one line callbacks that just return when complete, therefore users trying to log in aren't held back by the actual logging.
+Then when making the query for login-attempts we use INNER JOIN combined with userId to find the correct username, this allows us to easily link login attempts to a user.
+
+I didn't want this logging to hold up any other parts of the web app, the log in logging requests are one line callbacks that just return when complete, therefore users trying to log in aren't held back by the actual logging.

@@ -45,16 +45,18 @@ router.post("/loggedin", (req, res, next) => {
     db.query("SELECT hashedPassword FROM userdata WHERE username = ?", req.body.username, (err, result) => {
         if(err) return next(err)
         if(!result[0]) return res.send("User not found")
-
         bcrypt.compare(req.body.password, result[0].hashedPassword, (err, equal) => {
             if (err) return next(err)
-            let query = "INSERT INTO login_attempts (username, outcome, time) VALUE (?, ?, NOW())"
+            // ID is stored instead of username, to reduce redudancy
+            let query = `
+                INSERT INTO login_attempts (userId, outcome, time) 
+                SELECT id, ?, NOW()
+                FROM userdata WHERE username = ?;
+            `
             let outcome = equal ? "Success" : "Failure"
-
             // We don't want this function to throw any errors if they fail, nor do we want them to hold up log in.
             // Therefore we just let it run and allow the webapp to continue with log in
-            db.query(query, [req.body.username, outcome], (err, result) => { return })
-            
+            db.query(query, [outcome, req.body.username], (err, result) => { return })
             if (equal) {
                 res.send("Login successful")
             } else {
@@ -65,7 +67,12 @@ router.post("/loggedin", (req, res, next) => {
 })
 
 router.get("/audit", (req, res, next) => {
-    db.query("SELECT * FROM login_attempts", (err, result) => {
+    // As I want to display username, not userID, I have to grab the username from userdata using its id 
+    const query = `
+    SELECT userdata.username, login_attempts.outcome, login_attempts.time FROM login_attempts
+    INNER JOIN userdata on login_attempts.userId=userdata.id
+    `
+    db.query(query, (err, result) => {
         if (err) return next(err)
         res.render("audit.ejs", { attempts: result })
     });
