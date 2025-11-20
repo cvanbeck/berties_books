@@ -20,7 +20,7 @@ app.use(express.static(path.join(__dirname, 'public')))
 
 // Define our application-specific data
 app.locals.shopData = {shopName: "Bertie's Books"}
-
+console.log(process.env.PASSWORD)
 // Define database
 const db = mysql.createPool({
     host: "localhost",

@@ -29,5 +29,5 @@ CREATE TABLE IF NOT EXISTS login_attempts(
     PRIMARY KEY(ID)
 );
 
-CREATE USER IF NOT EXISTS 'berties_books_app'@'localhost' IDENTIFIED BY process.env.PASSWORD;
+CREATE USER IF NOT EXISTS 'berties_books_app'@'localhost' IDENTIFIED BY 'qwertyuiop';
 GRANT ALL PRIVILEGES ON berties_books.* TO 'berties_books_app'@'localhost';
