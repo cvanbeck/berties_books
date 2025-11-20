@@ -11,29 +11,29 @@ router.get('/register', function (req, res, next) {
     res.render('register.ejs')
 })
 
-router.post('/registered', function (req, res, next) {
-    const plainPassword = req.body.password;
-    let hash;
-    bcrypt.hash(plainPassword, saltRounds, (err, hashedPassword) => {
-        if (err) {
-            res.send(err)
-        }
-        else {
-            hash = hashedPassword
-            let sqlQuery = "INSERT INTO userData (username, firstName, lastName, email, hashedPassword) VALUES (?, ?, ?, ?, ?)"
-            let newRecord = [req.body.username, req.body.first, req.body.last, req.body.email, hash];
-            db.query(sqlQuery, newRecord, (err, result) => {
-                if (err) {
-                    res.send(err)
-                }
-                else {
-                    res.send(`Hello ${req.body.first} ${req.body.last} you are now registered!
-                     We will send an email to you at ${req.body.email}. Your password is:
-                     ${req.body.password} and your hashed password is: ${hash}
-                    `)
-                };
-            });
-        }
+router.post('/registered', (req, res, next) => {
+    bcrypt.hash(req.body.password, saltRounds, (err, hashedPassword) => {
+        if (err) return res.send(err);
+
+        let sqlQuery = `
+            INSERT INTO userdata (username, firstName, lastName, email, hashedPassword) 
+            VALUES (?, ?, ?, ?, ?)
+        `
+        let newRecord = [
+            req.body.username, 
+            req.body.first, 
+            req.body.last, 
+            req.body.email, 
+            hashedPassword
+        ];
+
+        db.query(sqlQuery, newRecord, (err, result) => {
+            if (err) return res.send(err)
+            res.send(`Hello ${req.body.first} ${req.body.last} you are now registered!
+                    We will send an email to you at ${req.body.email}. Your password is:
+                    ${req.body.password} and your hashed password is: ${hashedPassword}
+                `)
+        });
     });
 });
 
@@ -42,48 +42,39 @@ router.get("/login", (req, res, next) => {
 })
 
 router.post("/loggedin", (req, res, next) => {
-    let sqlQuery = "SELECT hashedPassword FROM userdata WHERE username = ?"
-    db.query(sqlQuery, req.body.username, (err, result) => {
-        if (err) {
-            next(err)
-        }   
-        else if(result[0]) {
-            bcrypt.compare(req.body.password, result[0].hashedPassword, async (err, result) => {
-                if (err){next(err)}
-                let query = "INSERT INTO login_attempts (username, outcome, time) VALUE (?, ?, NOW())"
-                if (result == true) {
-                    // We don't want these two functions to throw any errors if they fail, nor do we want them to hold up the logging in.
-                    // Therefore we just let them run and allow the webapp to continue with logging in
-                    db.query(query, [req.body.username, "Success"], (err, result) => { return })
-                    res.send("Login successful")
-                } else {
-                    db.query(query, [req.body.username, "Failure"], (err, result) => { return })
-                    res.send("Login unsuccesful")
-                }
-            })
-        } 
-        else {
-            res.send("User not found")
-        }
+    db.query("SELECT hashedPassword FROM userdata WHERE username = ?", req.body.username, (err, result) => {
+        if(err) return next(err)
+        if(!result[0]) return res.send("User not found")
+
+        bcrypt.compare(req.body.password, result[0].hashedPassword, (err, equal) => {
+            if (err) return next(err)
+            let query = "INSERT INTO login_attempts (username, outcome, time) VALUE (?, ?, NOW())"
+            let outcome = equal ? "Success" : "Failure"
+
+            // We don't want this function to throw any errors if they fail, nor do we want them to hold up log in.
+            // Therefore we just let it run and allow the webapp to continue with log in
+            db.query(query, [req.body.username, outcome], (err, result) => { return })
+            
+            if (equal) {
+                res.send("Login successful")
+            } else {
+                res.send("Login unsuccesful")
+            }
+        })
     })
 })
 
 router.get("/audit", (req, res, next) => {
-    let sqlquery = "SELECT * FROM login_attempts"
-    db.query(sqlquery, (err, result) => {
-        if (err) {
-            next(err)
-        }
+    db.query("SELECT * FROM login_attempts", (err, result) => {
+        if (err) return next(err)
         res.render("audit.ejs", { attempts: result })
     });
 })
 
 router.get("/list", (req, res, next) => {
-    let sqlquery = "SELECT username, firstName, lastName, email FROM userdata"
-    db.query(sqlquery, (err, result) => {
-        if (err) {
-            next(err)
-        }
+    let sqlquery = 
+    db.query("SELECT username, firstName, lastName, email FROM userdata", (err, result) => {
+        if (err) return next(err)
         res.render("listUsers.ejs", { users: result })
     });
 })
