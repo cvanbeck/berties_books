@@ -25,6 +25,9 @@ router.get('/register', function (req, res, next) {
 
 router.post('/registered',
     [check("email").isEmail(),
+    check("first", "last").isAlphanumeric(),
+    check().notEmpty(),
+    check("password").isLength({ min: 8 }),
     check('username').isLength({ min: 5, max: 20 }),],
     (req, res, next) => {
         const errors = validationResult(req);
