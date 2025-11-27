@@ -23,3 +23,18 @@ This webapp also logs all login attempts made to a valid username, this is done 
 Then when making the query for login-attempts we use INNER JOIN combined with userId to find the correct username, this allows us to easily link login attempts to a user.
 
 I didn't want this logging to hold up any other parts of the web app, the log in logging requests are one line callbacks that just return when complete, therefore users trying to log in aren't held back by the actual logging.
+
+## Access Control
+Authorisation has been required for access to the following pages: 
+- Audit
+- Logout
+- List users
+- Add new books
+
+Users that aren't logged in are still able to access:
+- Login
+- Register
+- About
+- Search Books
+- List all books
+- List all books less than 20 pound

@@ -9,9 +9,9 @@ router.get('/search',function(req, res, next){
 router.get('/search_result', function (req, res, next) {
     //searching in the database
     let search = req.query.search_text;
-    let sqlQuery = `SELECT * FROM books WHERE name LIKE '%${search}%';`
+    let sqlQuery = `SELECT * FROM books WHERE name LIKE '%?%';`
     console.log(sqlQuery)
-    db.query(sqlQuery, (err, result) => {
+    db.query(sqlQuery, search, (err, result) => {
         if (err) {
             console.log(err)
             next(err)

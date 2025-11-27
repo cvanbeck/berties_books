@@ -4,9 +4,21 @@ const router = express.Router()
 const bcrypt = require('bcrypt');
 const fs = require("fs")
 
-// Encryption config
+//Config
 const saltRounds = 10;
 
+
+// Helpers
+const redirectLogin = (req, res, next) => {
+    if(!req.session.userId) {
+        res.redirect("./login")
+    } else {
+        next();
+    }
+}
+
+
+// Routers
 router.get('/register', function (req, res, next) {
     res.render('register.ejs')
 })
@@ -45,6 +57,7 @@ router.post("/loggedin", (req, res, next) => {
     db.query("SELECT hashedPassword FROM userdata WHERE username = ?", req.body.username, (err, result) => {
         if(err) return next(err)
         if(!result[0]) return res.send("User not found")
+
         bcrypt.compare(req.body.password, result[0].hashedPassword, (err, equal) => {
             if (err) return next(err)
             // ID is stored instead of username, to reduce redudancy
@@ -53,11 +66,13 @@ router.post("/loggedin", (req, res, next) => {
                 SELECT id, ?, NOW()
                 FROM userdata WHERE username = ?;
             `
-            let outcome = equal ? "Success" : "Failure"
+
             // We don't want this function to throw any errors if they fail, nor do we want them to hold up log in.
             // Therefore we just let it run and allow the webapp to continue with log in
+            let outcome = equal ? "Success" : "Failure"
             db.query(query, [outcome, req.body.username], (err, result) => { return })
             if (equal) {
+                req.session.userId = req.body.username;
                 res.send("Login successful")
             } else {
                 res.send("Login unsuccesful")
@@ -66,19 +81,29 @@ router.post("/loggedin", (req, res, next) => {
     })
 })
 
-router.get("/audit", (req, res, next) => {
+router.get("/logout", redirectLogin, (req, res) => {
+    req.session.destroy(err => {
+        if (err) return res.redirect("./")
+    });
+    res.send('you are now logged out. <a href='+'./'+'>Home</a>')
+})
+
+
+router.get("/audit", redirectLogin, (req, res, next) => {
     // As I want to display username, not userID, I have to grab the username from userdata using its id 
     const query = `
-    SELECT userdata.username, login_attempts.outcome, login_attempts.time FROM login_attempts
-    INNER JOIN userdata on login_attempts.userId=userdata.id
+    SELECT userdata.username, login_attempts.outcome, login_attempts.time 
+    FROM login_attempts INNER JOIN userdata 
+    ON login_attempts.userId=userdata.id
     `
+    
     db.query(query, (err, result) => {
         if (err) return next(err)
         res.render("audit.ejs", { attempts: result })
     });
 })
 
-router.get("/list", (req, res, next) => {
+router.get("/list", redirectLogin, (req, res, next) => {
     let sqlquery = 
     db.query("SELECT username, firstName, lastName, email FROM userdata", (err, result) => {
         if (err) return next(err)
