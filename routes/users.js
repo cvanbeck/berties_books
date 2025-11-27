@@ -83,9 +83,9 @@ router.post("/loggedin", (req, res, next) => {
 
 router.get("/logout", redirectLogin, (req, res) => {
     req.session.destroy(err => {
-        if (err) return res.redirect("./")
+        if (err) return res.redirect("../")
     });
-    res.send('you are now logged out. <a href='+'./'+'>Home</a>')
+    res.send('you are now logged out. <a href='+'../'+'>Home</a>')
 })
 
 
